@@ -18,6 +18,22 @@ class BasicPropositions:
 
     def __repr__(self):
         return f"A.{self.data}"
+    
+@constraint.none_of(E)
+@proposition(E)
+class AlwaysFalse:
+
+    def __init__(self, data):
+        self.data = data
+
+    def __repr__(self):
+        return f"A.{self.data}"
+    
+false = AlwaysFalse("false")
+true = ~false
+    
+# false_prop = BasicPropositions("false_prop")
+# false = (~false_prop & ~false_prop)
 
 
 # Different classes for propositions are useful because this allows for more dynamic constraint creation
@@ -25,15 +41,15 @@ class BasicPropositions:
 # that are instances of this class must be true by using a @constraint decorator.
 # other options include: at most one, exactly one, at most k, and implies all.
 # For a complete module reference, see https://bauhaus.readthedocs.io/en/latest/bauhaus.html
-@constraint.at_least_one(E)
-@proposition(E)
-class FancyPropositions:
+# @constraint.at_least_one(E)
+# @proposition(E)
+# class FancyPropositions:
 
-    def __init__(self, data):
-        self.data = data
+#     def __init__(self, data):
+#         self.data = data
 
-    def __repr__(self):
-        return f"A.{self.data}"
+#     def __repr__(self):
+#         return f"A.{self.data}"
 
 # # Call your variables whatever you want
 # a = BasicPropositions("a")
@@ -46,15 +62,17 @@ class FancyPropositions:
 # y = FancyPropositions("y")
 # z = FancyPropositions("z")
 
+left_is_valid = True
+right_is_valid = True
+straight_is_valid = True
 
 
-
-class Intersection:
+class Route:
     def __init__(self, lightstate: bool):
 
-        self.Intersection_E = Encoding()
+        self.Route_E = Encoding()
 
-        @proposition(self.Intersection_E)
+        @proposition(self.Route_E)
         class IntersectionPropositions:
 
             def __init__(self, data):
@@ -67,19 +85,38 @@ class Intersection:
         right = IntersectionPropositions("right")
         straight = IntersectionPropositions("straight")
 
+        self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
+       
+    #     self.lightstate = lightstate
+    #     # if self.lightstate:
+    #         # self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
+    #         #                 This would be a recursive ca   recurse on straight           recurse on right
+    #     if left_is_valid:
+    #         left_r = Route(True)
+    #         left_c = left_r.get_constraint()
+    #     else:
+    #         left_c = None
+
+    #     if right_is_valid:
+    #         right_r = Route(True)
+    #         right_c = right_r.get_constraint()
+    #     else:
+    #         right_c = None
+
+    #     if straight_is_valid:
+    #         straight_r = Route(True)
+    #         straight_c = straight_r.get_constraint()
+    #     else:
+    #         straight_c = None
 
 
-        # Intersection_E.add_constraint((lightstate | ~lightstate))
-        self.lightstate = lightstate
-        if self.lightstate:
-            self.Intersection_E.add_constraint((left | straight | right))
-            # def __init__(self, lightstate: bool)
-        else:
-            self.Intersection_E.add_constraint(right)
-            # def __init__(self, lightstate: bool)
+    #     self.constraint =   (right_c if right_c != None else false) | (straight_c if straight_c != None else false)
     
     def get_encoding(self):
-        return self.Intersection_E
+        return self.Route_E
+    
+    def get_constraint(self):
+        return self.constraint
 
 
 
@@ -89,10 +126,13 @@ class Intersection:
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
 def example_theory():
-    test = Intersection(False)
-    test2 = Intersection(True)
-    e = test.get_encoding()
-    e2 = test2.get_encoding()
+    test = Route(True)
+    # E.add_constraint(test.get_constraint())
+    E.add_constraint(test.get_constraint() & true)
+    # test2 = Route(True)
+    # e = test.get_encoding()
+    # e2 = test2.get_encoding()
+
     # Add custom constraints by creating formulas with the variables you created. 
     # E.add_constraint((a | b) & ~x)
     # # Implication
@@ -102,7 +142,7 @@ def example_theory():
     # # You can also add more customized "fancy" constraints. Use case: you don't want to enforce "exactly one"
     # # for every instance of BasicPropositions, but you want to enforce it for a, b, and c.:
     # constraint.add_exactly_one(E, a, b, c)
-    return e
+    # return e
     return E
 
 
