@@ -67,6 +67,14 @@ right_is_valid = True
 straight_is_valid = True
 
 
+class Intersection:
+    def __init__(self, red_light_vertical, no_west, no_north, no_east, no_south):
+        self.red_light_vertical = red_light_vertical
+        self.no_west = no_west
+        self.no_north = no_north
+        self.no_east = no_east
+        self.no_south = no_south
+
 class Route:
     def __init__(self, lightstate: bool):
 
