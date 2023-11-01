@@ -66,9 +66,15 @@ left_is_valid = True
 right_is_valid = True
 straight_is_valid = True
 
+win = False
+
+left_count = 0
+right_count = 0
+straight_count = 0
+
 
 class Route:
-    def __init__(self, lightstate: bool):
+    def __init__(self, lightstate: bool, left_count, right_count,straight_count):
 
         self.Route_E = Encoding()
 
@@ -85,32 +91,63 @@ class Route:
         right = IntersectionPropositions("right")
         straight = IntersectionPropositions("straight")
 
-        self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
+        # self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
        
-    #     self.lightstate = lightstate
-    #     # if self.lightstate:
-    #         # self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
-    #         #                 This would be a recursive ca   recurse on straight           recurse on right
-    #     if left_is_valid:
-    #         left_r = Route(True)
-    #         left_c = left_r.get_constraint()
-    #     else:
-    #         left_c = None
 
-    #     if right_is_valid:
-    #         right_r = Route(True)
-    #         right_c = right_r.get_constraint()
-    #     else:
-    #         right_c = None
-
-    #     if straight_is_valid:
-    #         straight_r = Route(True)
-    #         straight_c = straight_r.get_constraint()
-    #     else:
-    #         straight_c = None
+        # print(left_count, right_count,straight_count)
+        # print(left_count > 3)
 
 
-    #     self.constraint =   (right_c if right_c != None else false) | (straight_c if straight_c != None else false)
+        self.lightstate = lightstate
+        # if self.lightstate:
+            # self.constraint = ((left & ~straight & ~right) | (left & ~straight & ~right) | (~left & ~straight & right))
+            #                 This would be a recursive ca   recurse on straight           recurse on right
+        if right_count == 2 or straight_count == 1 or left_count == 1 :
+            print("HERE2")
+            if left_count == 1:
+                print(left_count, right_count,straight_count)
+                self.constraint = true
+                print("HERE")
+            else: 
+                self.constraint = false
+                print("HERE1")
+        else:
+            print("HERE3")
+            if left_is_valid:
+                # left_count += 1
+                left_r = Route(True,left_count + 1, right_count,straight_count)
+                # if left_r.get_constraint() != false:
+                #     left = IntersectionPropositions("left")
+                #     right = IntersectionPropositions("right")
+                #     straight = IntersectionPropositions("straight")
+
+                #     left_c = (left & ~straight & ~right) & left_r.get_constraint()
+                
+                # else:
+                #     left_c = false
+                left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
+                #        constraight on turning left
+            else:
+                left_c = false
+
+            if right_is_valid:
+                # right_count += 1
+                right_r = Route(True, left_count, right_count +1, straight_count)
+                right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
+            else:
+                right_c = false
+
+            if straight_is_valid:
+                # straight_count += 1
+                straight_r = Route(True,left_count, right_count,straight_count +1)
+                straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
+            else:
+                straight_c = false
+
+            self.constraint = left_c | right_c  | straight_c 
+
+
+        
     
     def get_encoding(self):
         return self.Route_E
@@ -126,9 +163,11 @@ class Route:
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
 def example_theory():
-    test = Route(True)
+    test = Route(True,0,0,0)
     # E.add_constraint(test.get_constraint())
-    E.add_constraint(test.get_constraint() & true)
+    E.add_constraint(test.get_constraint())
+
+    print(E.constraints)
     # test2 = Route(True)
     # e = test.get_encoding()
     # e2 = test2.get_encoding()
@@ -151,6 +190,7 @@ if __name__ == "__main__":
     T = example_theory()
     # Don't compile until you're finished adding all your constraints!
     T = T.compile()
+    print(len(T.vars()))
     # After compilation (and only after), you can check some of the properties
     # of your model:
     print("\nSatisfiable: %s" % T.satisfiable())
