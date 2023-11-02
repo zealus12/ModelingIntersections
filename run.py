@@ -205,7 +205,7 @@ class Route:
         # straight = IntersectionPropositions("straight")
         left = IntersectionPropositions("left"+str(iter_num))
         right = IntersectionPropositions("right"+str(iter_num))
-        straight = IntersectionPropositions("straight"+str(iter_num))
+        # straight = IntersectionPropositions("straight"+str(iter_num))
 
 
         path.append([])
@@ -243,7 +243,7 @@ class Route:
 
                 if left_r.get_constraint() != false:
                     print("HERE", left_count, right_count,straight_count)
-                    left_c = (left & ~straight & ~right) & left_r.get_constraint()
+                    left_c = (left & ~right) & left_r.get_constraint()
                 
                 else:
                     left_c = None
@@ -256,7 +256,7 @@ class Route:
                 # right_count += 1
                 right_r = Route(True, left_count, right_count +1, straight_count, iter_num+1, path,1)
                 if right_r.get_constraint() != false:
-                    right_c = (~left & ~straight & right) & right_r.get_constraint()
+                    right_c = (~left & right) & right_r.get_constraint()
                 
                 else:
                     right_c = None
@@ -264,16 +264,16 @@ class Route:
             else:
                 right_c = None
 
-            if straight_is_valid:
-                # straight_count += 1
+            # if straight_is_valid:
+            #     # straight_count += 1
                 
-                straight_r = Route(True,left_count, right_count,straight_count +1, iter_num+1, path, 2)
-                if straight_r.get_constraint() != false:
-                    straight_c = (~left & straight & ~right) & straight_r.get_constraint()
-                else:
-                    straight_c = None
+            #     straight_r = Route(True,left_count, right_count,straight_count +1, iter_num+1, path, 2)
+            #     if straight_r.get_constraint() != false:
+            #         straight_c = (~left & straight & ~right) & straight_r.get_constraint()
+            #     else:
+            #         straight_c = None
 
-            else:
+            # else:
             straight_c = None
 
 

@@ -8,4 +8,4 @@
     (LI && ~F && ~SI && ~RI && (~LII or LI or SI or ~RI or RII or SII or F) )))
 
 
-~LI && ~F && ~SI && RI
+~LI && ~SI && RI && (LII && ~F && ~SII && ~RII &&)
