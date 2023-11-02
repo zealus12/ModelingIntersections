@@ -62,36 +62,11 @@ true = ~false
 # y = FancyPropositions("y")
 # z = FancyPropositions("z")
 
-left_is_valid = True
-right_is_valid = True
-straight_is_valid = True
-
 win = False
 
 left_count = 0
 right_count = 0
 straight_count = 0
-
-
-class Map:
-    def __init__(self, num_of_rows, num_of_cols, one_way_row, one_way_col):
-        self.num_of_rows = num_of_rows
-        self.num_of_cols = num_of_cols
-        self.one_way_row = one_way_row
-        self.one_way_col = one_way_col
-        self.map = [[0]*self.num_of_cols]*num_of_rows
-
-        if(self.num_of_rows < self.one_way_row):
-            self.one_way_row = self.num_of_rows
-        if(self.num_of_cols < self.one_way_col):
-            self.one_way_col = self.num_of_cols
-
-        self.roads = []
-        for x in range(0, self.one_way_col):
-            self.roads.append["one way", random.random()]
-        
-
-        
 
 class Intersection:
     def __init__(self, red_light_col, no_west, no_north, no_east, no_south):
@@ -182,100 +157,143 @@ class Map:
                 # Adds it into the map
                 self.map[x][y] = Intersection(random.randint(0,1),no_west,no_north,no_east,no_south)
                 print_statement = "X:" + str(x) + " Y:" + str(y)
-                
+
+Route_E = Encoding()
+
+@proposition(Route_E)
+class IntersectionPropositions:
+
+    def __init__(self, data):
+        self.data = data
+
+    def __repr__(self):
+        return f"A.{self.data}"
+    
+grid = Map(2, 2, 0, 0)
+
+approachDirections = ["N", "E", "S", "W"]
+
+gridProps = []
+
+def createProps(grid):
+    for i in range(len(grid.map)):
+        for j in range(len(grid.map[0])):
+            for direction in approachDirections:
+                left = IntersectionPropositions("left"+direction+str(i)+str(j))
+                right = IntersectionPropositions("right"+direction+str(i)+str(j))
+                straight = IntersectionPropositions("straight"+direction+str(i)+str(j))
+                gridProps.append(left)
+                gridProps.append(right)
+                gridProps.append(straight)
+
+createProps(grid)
+
+print(gridProps)
+
+target = [1, 1]
+start = [0, 0]
+startDir = "N"
+# make this a 2d array and add a new element for each new route which is created and use this as the previous locations of all the routes
+prevLocations = [[]]
+
+# TODO - update the following 3 functions when we include the rest of the factors for whether a move is valid
+def turnLeft(intersection, direction):
+    # converting old direction to direction after turn
+    direction = approachDirections[(approachDirections.index(direction)+1)%4]
+    if direction == "N":
+        return not intersection.no_north
+    elif direction == "E":
+        return not intersection.no_east
+    elif direction == "S":
+        return not intersection.no_south
+    elif direction == "W":
+        return not intersection.no_west
+
+
+def turnRight(intersection, direction):
+    # converting old direction to direction after turn
+    direction = approachDirections[(approachDirections.index(direction)-1)%4]
+    if direction == "N":
+        return not intersection.no_north
+    elif direction == "E":
+        return not intersection.no_east
+    elif direction == "S":
+        return not intersection.no_south
+    elif direction == "W":
+        return not intersection.no_west
+
+def goStraight(intersection, direction):
+    if direction == "N":
+        return not intersection.no_north
+    elif direction == "E":
+        return not intersection.no_east
+    elif direction == "S":
+        return not intersection.no_south
+    elif direction == "W":
+        return not intersection.no_west
+    
+def findNewLocation(location, turnDir, direction):
+    direction = findNewDirection(turnDir, direction)
+    if direction == "N":
+        return [location[0], location[1]+1]
+    elif direction == "E":
+        return [location[0]+1, location[1]]
+    elif direction == "S":
+        return [location[0], location[1]-1]
+    elif direction == "W":
+        return [location[0]-1, location[1]]
+
+def findNewDirection(turnDir, direction):
+    if turnDir == "L":
+        return approachDirections[(approachDirections.index(direction)+1)%4]
+    if turnDir == "R":
+        return approachDirections[(approachDirections.index(direction)-1)%4]
+    if turnDir == "S":
+        return direction
+
+
+
+# if this doesnt work, remove the recursion and use loops
 class Route:
-    def __init__(self, lightstate: bool, left_count, right_count,straight_count, iter_num):
+    def __init__(self, location, direction, target, previousLocations, left_count, right_count, straight_count):
+        left = IntersectionPropositions("left")
+        right = IntersectionPropositions("right")
+        straight = IntersectionPropositions("straight")
 
-        self.Route_E = Encoding()
-
-        @proposition(self.Route_E)
-        class IntersectionPropositions:
-
-            def __init__(self, data):
-                self.data = data
-
-            def __repr__(self):
-                return f"A.{self.data}"
-
-        # left = IntersectionPropositions("left")
-        # right = IntersectionPropositions("right")
-        # straight = IntersectionPropositions("straight")
-        left = IntersectionPropositions("left"+str(iter_num))
-        right = IntersectionPropositions("right"+str(iter_num))
-        straight = IntersectionPropositions("straight"+str(iter_num))
-        # self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
-       
-
-        # print(left_count, right_count,straight_count)
-        # print(left_count > 3)
-
-
-        self.lightstate = lightstate
-        # if self.lightstate:
-            # self.constraint = ((left & ~straight & ~right) | (left & ~straight & ~right) | (~left & ~straight & right))
-            #                 This would be a recursive ca   recurse on straight           recurse on right
-        if right_count == 2 or straight_count == 1 or left_count == 1 :
-            print("HERE2")
-            if left_count == 1:
-                print(left_count, right_count,straight_count)
-                self.constraint = true
-                print("HERE")
+        # if the game is over
+        if location in prevLocations or location == target:
+            # if the game ended in a win
+            if location == target:
+                print("location:",location)
+                print("target:",target)
+                self.constraint = true # HERE I NEED TO FIGURE OUT HOW TO USE ALL THE PROPS WHICH WERENT USED IN THIS ROUTE 
             else: 
-                self.constraint = false
-                print("HERE1")
+                print("location:",location)
+                print("target:",target)
+                self.constraint = false # THIS SHOULD BE FINE?
         else:
-            print("HERE3")
-            if left_is_valid:
-                # left_count += 1
-                left_r = Route(True,left_count + 1, right_count,straight_count, iter_num+1)
-                if left_r.get_constraint() != false:
-                    print("HERE", left_count, right_count,straight_count)
-                    # left = IntersectionPropositions("left"+str(iter_num))
-                    # right = IntersectionPropositions("right"+str(iter_num))
-                    # straight = IntersectionPropositions("straight"+str(iter_num))
-
-                    left_c = (left & ~straight & ~right) & left_r.get_constraint()
-                
-                else:
-                    left_c = false
-                # left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
-                #        constraight on turning left
+            if turnLeft(grid.map[location[0]][location[1]], direction):
+                previousLocations.append(findNewLocation(location, "L", direction))
+                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), previousLocations, left_count + 1, right_count, straight_count)
+                left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
             else:
                 left_c = false
 
-            if right_is_valid:
-                # right_count += 1
-                right_r = Route(True, left_count, right_count +1, straight_count, iter_num+1)
-                if right_r.get_constraint() != false:
-                    print("HERE1", left_count, right_count,straight_count)
-                    # left = IntersectionPropositions("left"+str(iter_num))
-                    # right = IntersectionPropositions("right"+str(iter_num))
-                    # straight = IntersectionPropositions("straight"+str(iter_num))
-
-                    right_c = (~left & ~straight & right) & right_r.get_constraint()
-                
-                else:
-                    right_c = false
-                # right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
+            if turnRight(grid.map[location[0]][location[1]], direction):
+                previousLocations.append(findNewLocation(location, "L", direction))
+                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), previousLocations, left_count, right_count + 1, straight_count)
+                right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
             else:
                 right_c = false
 
-            if straight_is_valid:
-                # straight_count += 1
-                straight_r = Route(True,left_count, right_count,straight_count +1, iter_num+1)
-                if straight_r.get_constraint() != false:
-                    print("HERE2", left_count, right_count,straight_count)
-                    
-
-                    straight_c = (~left & straight & ~right) & straight_r.get_constraint()
-                
-                else:
-                    straight_c = false
-                # straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
+            if goStraight(grid.map[location[0]][location[1]], direction):
+                previousLocations.append(findNewLocation(location, "L", direction))
+                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), previousLocations, left_count, right_count, straight_count + 1)
+                straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
             else:
                 straight_c = false
 
-            self.constraint = left_c | right_c  | straight_c 
+            self.constraint = left_c | right_c | straight_c
 
 
         
@@ -294,7 +312,7 @@ class Route:
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
 def example_theory():
-    test = Route(True,0,0,0, 0)
+    test = Route(start, startDir, target, [[0, 0]], 0, 0, 0)
     # E.add_constraint(test.get_constraint())
     E.add_constraint(test.get_constraint())
 
@@ -313,8 +331,6 @@ def example_theory():
     # # for every instance of BasicPropositions, but you want to enforce it for a, b, and c.:
     # constraint.add_exactly_one(E, a, b, c)
     # return e
-    # (((¬A.false)) and (A.false or (A.left0 and ¬A.straight0 and ¬A.false and ¬A.right0) or (¬A.left0 and A.right0 and (A.false or (¬A.straight1 and ¬A.false and ¬A.right1 and A.left1)) and ¬A.straight0)))
-    # (((¬A.false)) and ((A.left and ¬A.false and ¬A.right and ¬A.straight) or (((¬A.right and ¬A.straight and A.left and ¬A.false) or A.false) and A.right and ¬A.left and ¬A.straight) or A.false))
     return E
 
 
@@ -322,12 +338,8 @@ if __name__ == "__main__":
 
     T = example_theory()
     # Don't compile until you're finished adding all your constraints!
-    
     T = T.compile()
-    E.pprint(T)
     print(len(T.vars()))
-    print(T.vars())
-    # print(T)
     # After compilation (and only after), you can check some of the properties
     # of your model:
     print("\nSatisfiable: %s" % T.satisfiable())
@@ -361,3 +373,5 @@ this will end up with a massive constraint of disjunctions which will be the sol
 a path will also return if it is unsuccessful
 a path is unsuccessful if it has no directions it can legally move or it has hit a previous location the car has already driven 
 """
+
+# docker run -it -v "D:/School/Second Year/CISC 204/Final Project/ModelingIntersections":/PROJECT cisc204 /bin/bash
