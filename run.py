@@ -183,11 +183,14 @@ class Map:
                 self.map[x][y] = Intersection(random.randint(0,1),no_west,no_north,no_east,no_south)
                 print_statement = "X:" + str(x) + " Y:" + str(y)
                 
+
+
 class Route:
-    def __init__(self, lightstate: bool, left_count, right_count,straight_count, iter_num):
+    def __init__(self, lightstate: bool, left_count, right_count,straight_count, iter_num, path,index):
 
         self.Route_E = Encoding()
 
+        # @constraint.at_most_k(self.Route_E, iter_num)
         @proposition(self.Route_E)
         class IntersectionPropositions:
 
@@ -203,6 +206,9 @@ class Route:
         left = IntersectionPropositions("left"+str(iter_num))
         right = IntersectionPropositions("right"+str(iter_num))
         straight = IntersectionPropositions("straight"+str(iter_num))
+
+
+        path.append([])
         # self.constraint = ((left & ~straight & ~right) | (~left & straight & ~right) | (~left & ~straight & right))
        
 
@@ -219,63 +225,85 @@ class Route:
             if left_count == 1:
                 print(left_count, right_count,straight_count)
                 self.constraint = true
+                self.win = true
+                
                 print("HERE")
             else: 
                 self.constraint = false
+                self.win = false
                 print("HERE1")
         else:
             print("HERE3")
             if left_is_valid:
                 # left_count += 1
-                left_r = Route(True,left_count + 1, right_count,straight_count, iter_num+1)
+                left_r = Route(True,left_count + 1, right_count,straight_count, iter_num+1,path,0)
+
+                if left_r.good_path() == true:
+                    self.win = true
+
                 if left_r.get_constraint() != false:
                     print("HERE", left_count, right_count,straight_count)
-                    # left = IntersectionPropositions("left"+str(iter_num))
-                    # right = IntersectionPropositions("right"+str(iter_num))
-                    # straight = IntersectionPropositions("straight"+str(iter_num))
-
                     left_c = (left & ~straight & ~right) & left_r.get_constraint()
                 
                 else:
-                    left_c = false
+                    left_c = None
                 # left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
                 #        constraight on turning left
             else:
-                left_c = false
+                left_c = None
 
             if right_is_valid:
                 # right_count += 1
-                right_r = Route(True, left_count, right_count +1, straight_count, iter_num+1)
+                right_r = Route(True, left_count, right_count +1, straight_count, iter_num+1, path,1)
                 if right_r.get_constraint() != false:
-                    print("HERE1", left_count, right_count,straight_count)
-                    # left = IntersectionPropositions("left"+str(iter_num))
-                    # right = IntersectionPropositions("right"+str(iter_num))
-                    # straight = IntersectionPropositions("straight"+str(iter_num))
-
                     right_c = (~left & ~straight & right) & right_r.get_constraint()
                 
                 else:
-                    right_c = false
+                    right_c = None
                 # right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
             else:
-                right_c = false
+                right_c = None
 
             if straight_is_valid:
                 # straight_count += 1
-                straight_r = Route(True,left_count, right_count,straight_count +1, iter_num+1)
-                if straight_r.get_constraint() != false:
-                    print("HERE2", left_count, right_count,straight_count)
-                    
-
-                    straight_c = (~left & straight & ~right) & straight_r.get_constraint()
                 
+                straight_r = Route(True,left_count, right_count,straight_count +1, iter_num+1, path, 2)
+                if straight_r.get_constraint() != false:
+                    straight_c = (~left & straight & ~right) & straight_r.get_constraint()
                 else:
-                    straight_c = false
-                # straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
-            else:
-                straight_c = false
+                    straight_c = None
 
-            self.constraint = left_c | right_c  | straight_c 
+            else:
+            straight_c = None
+
+
+            if left_c == None and right_c == None and straight_c == None:
+                self.constraint = false
+
+            if left_c != None and right_c == None and straight_c == None:
+                self.constraint = left_c
+
+            if left_c == None and right_c != None and straight_c == None:
+                self.constraint = right_c
+
+            if left_c == None and right_c == None and straight_c != None:
+                self.constraint = straight_c
+
+            if left_c != None and right_c != None and straight_c == None:
+                self.constraint = (left_c & ~right_c) | (~left_c & right_c)
+
+            if left_c != None and right_c == None and straight_c != None:
+                self.constraint = (left_c & ~straight_c) | (~left_c & straight_c) 
+
+            if left_c == None and right_c != None and straight_c != None:
+                self.constraint = (right_c  & ~straight_c) | (~right_c  & straight_c) 
+
+            if left_c != None and right_c != None and straight_c != None:
+                self.constraint = (left_c & ~right_c  & ~straight_c) | (~left_c & right_c  & ~straight_c) | (~left_c & ~right_c  & straight_c) 
+            
+                        
+            # self.constraint = left_c | right_c | straight_c
+            # self.constraint = (left_c & ~right_c  & ~straight_c)  | (~left_c & right_c  & ~straight_c)  | (~left_c & ~right_c  & straight_c)  
 
 
         
@@ -285,6 +313,9 @@ class Route:
     
     def get_constraint(self):
         return self.constraint
+    
+    def good_path(self):
+        return self.win
 
 
 
@@ -294,7 +325,7 @@ class Route:
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
 def example_theory():
-    test = Route(True,0,0,0, 0)
+    test = Route(True,0,0,0, 0, [], 0)
     # E.add_constraint(test.get_constraint())
     E.add_constraint(test.get_constraint())
 

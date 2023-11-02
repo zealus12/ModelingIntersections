@@ -1,1 +1,11 @@
-(((~F)) && (F || (LI && ~SI && ~F && ~RI) || (~LI && RI && (F || (~SII && ~F && ~RII && LII)) && ~SI)))
+(((~F)) && (
+    
+    (~RII && ~SII && ~F && ~LI && ~SI && (SI || RI or ~LI or F) && RI && LII)
+    
+    
+    
+    or 
+    (LI && ~F && ~SI && ~RI && (~LII or LI or SI or ~RI or RII or SII or F) )))
+
+
+~LI && ~F && ~SI && RI
