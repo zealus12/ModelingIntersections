@@ -71,24 +71,6 @@ win = False
 left_count = 0
 right_count = 0
 straight_count = 0
-
-
-class Map:
-    def __init__(self, num_of_rows, num_of_cols, one_way_row, one_way_col):
-        self.num_of_rows = num_of_rows
-        self.num_of_cols = num_of_cols
-        self.one_way_row = one_way_row
-        self.one_way_col = one_way_col
-        self.map = [[0]*self.num_of_cols]*num_of_rows
-
-        if(self.num_of_rows < self.one_way_row):
-            self.one_way_row = self.num_of_rows
-        if(self.num_of_cols < self.one_way_col):
-            self.one_way_col = self.num_of_cols
-
-        self.roads = []
-        for x in range(0, self.one_way_col):
-            self.roads.append["one way", random.random()]
         
 
         
@@ -128,11 +110,11 @@ class Map:
         if(self.num_of_cols < self.one_way_col):
             self.one_way_col = self.num_of_cols
         
-        #Spliting the roads into direction
+        # Spliting the roads into direction
         self.col_roads = []
         self.row_roads = []
 
-        #Randomizeing one way road direction then filling the rest of the space with two way roads
+        # Randomizeing one way road direction then filling the rest of the space with two way roads
         for x in range(0, self.one_way_col):
             self.col_roads.append(["one way", random.randint(0,1)]) # One way North if 1, South if 0
         while(len(self.col_roads) < self.num_of_cols):
@@ -148,7 +130,7 @@ class Map:
         random.shuffle(self.row_roads)
         self.roads = [self.col_roads, self.row_roads]
 
-        #Sorting through the roads and making the intersections
+        # Sorting through the roads and making the intersections
         for y in range(self.num_of_rows):
             for x in range(self.num_of_cols):
                 no_north = False
