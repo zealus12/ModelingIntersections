@@ -1,7 +1,7 @@
 
 from bauhaus import Encoding, proposition, constraint
 from bauhaus.utils import count_solutions, likelihood
-
+import random
 # These two lines make sure a faster SAT solver is used.
 from nnf import config
 config.sat_backend = "kissat"
@@ -73,17 +73,116 @@ right_count = 0
 straight_count = 0
 
 
+class Map:
+    def __init__(self, num_of_rows, num_of_cols, one_way_row, one_way_col):
+        self.num_of_rows = num_of_rows
+        self.num_of_cols = num_of_cols
+        self.one_way_row = one_way_row
+        self.one_way_col = one_way_col
+        self.map = [[0]*self.num_of_cols]*num_of_rows
+
+        if(self.num_of_rows < self.one_way_row):
+            self.one_way_row = self.num_of_rows
+        if(self.num_of_cols < self.one_way_col):
+            self.one_way_col = self.num_of_cols
+
+        self.roads = []
+        for x in range(0, self.one_way_col):
+            self.roads.append["one way", random.random()]
+        
+
+        
+
 class Intersection:
-    def __init__(self, red_light_vertical, no_west, no_north, no_east, no_south):
-        self.red_light_vertical = red_light_vertical
+    def __init__(self, red_light_col, no_west, no_north, no_east, no_south):
+
+        # Is there a red light stopping traffic going North-South direction 
+        self.red_light_col = red_light_col
+        
+        # Conditions for if the car can turn that direction
+        # May not be able to turn if it is a one-way road or a edge of the map
         self.no_west = no_west
         self.no_north = no_north
         self.no_east = no_east
         self.no_south = no_south
 
+    # For readability while debugging
+    def __str__(self):  
+        return "Red light % s, No West:% s, No North:% s, No East:% s, No South:% s," % (self.red_light_col, self.no_west, self.no_north, self.no_east, self.no_south)
 
+class Map:
+    def __init__(self, num_of_rows, num_of_cols, one_way_row, one_way_col):
+        # Determining Grid Size
+        self.num_of_rows = num_of_rows
+        self.num_of_cols = num_of_cols
 
+        # Defining number of One Way Roads
+        self.one_way_row = one_way_row
+        self.one_way_col = one_way_col
 
+        self.map = [[0]*self.num_of_cols]*num_of_rows
+
+        # Making sure there are not more one way roads then roads
+        if(self.num_of_rows < self.one_way_row):
+            self.one_way_row = self.num_of_rows
+        if(self.num_of_cols < self.one_way_col):
+            self.one_way_col = self.num_of_cols
+        
+        #Spliting the roads into direction
+        self.col_roads = []
+        self.row_roads = []
+
+        #Randomizeing one way road direction then filling the rest of the space with two way roads
+        for x in range(0, self.one_way_col):
+            self.col_roads.append(["one way", random.randint(0,1)]) # One way North if 1, South if 0
+        while(len(self.col_roads) < self.num_of_cols):
+            self.col_roads.append(["two way"])
+        
+        for x in range(0, self.one_way_row):
+            self.row_roads.append(["one way", random.randint(0,1)]) # One way East if 1, West if 0
+        while(len(self.row_roads) < self.num_of_rows):
+            self.row_roads.append(["two way"])
+        
+        # Randomize the roads and put them in a grid
+        random.shuffle(self.col_roads) 
+        random.shuffle(self.row_roads)
+        self.roads = [self.col_roads, self.row_roads]
+
+        #Sorting through the roads and making the intersections
+        for y in range(self.num_of_rows):
+            for x in range(self.num_of_cols):
+                no_north = False
+                no_south = False
+                no_east = False
+                no_west = False
+
+                # Applies conditions to the one way roads
+                if self.roads[0][x][0] == "one way":
+                    if self.roads[0][x][1] == 1:
+                        no_south = True
+                    else:
+                        no_north = True
+                
+                if self.roads[1][y][0] == "one way":
+                    if self.roads[1][y][1] == 1:
+                        no_west = True
+                    else:
+                        no_east = True
+
+                # Checks if they are at the border
+                if x == 0:
+                    no_west = True
+                if y == 0:
+                    no_south = True 
+                if x == self.num_of_cols-1:
+                    no_east = True
+                if y == self.num_of_rows-1:
+                    no_north = True
+                
+                # Adds it into the map
+                self.map[x][y] = Intersection(random.randint(0,1),no_west,no_north,no_east,no_south)
+                print_statement = "X:" + str(x) + " Y:" + str(y)
+                
 class Route:
     def __init__(self, lightstate: bool, left_count, right_count,straight_count, iter_num):
 
