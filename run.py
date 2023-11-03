@@ -70,60 +70,44 @@ straight_count = 0
 
 class Intersection:
     def __init__(self, red_light_col, no_west, no_north, no_east, no_south):
-
-        # Is there a red light stopping traffic going North-South direction 
         self.red_light_col = red_light_col
-        
-        # Conditions for if the car can turn that direction
-        # May not be able to turn if it is a one-way road or a edge of the map
         self.no_west = no_west
         self.no_north = no_north
         self.no_east = no_east
         self.no_south = no_south
 
-    # For readability while debugging
     def __str__(self):  
         return "Red light % s, No West:% s, No North:% s, No East:% s, No South:% s," % (self.red_light_col, self.no_west, self.no_north, self.no_east, self.no_south)
 
 class Map:
     def __init__(self, num_of_rows, num_of_cols, one_way_row, one_way_col):
-        # Determining Grid Size
         self.num_of_rows = num_of_rows
         self.num_of_cols = num_of_cols
-
-        # Defining number of One Way Roads
         self.one_way_row = one_way_row
         self.one_way_col = one_way_col
-
         self.map = [[0]*self.num_of_cols]*num_of_rows
 
-        # Making sure there are not more one way roads then roads
         if(self.num_of_rows < self.one_way_row):
             self.one_way_row = self.num_of_rows
         if(self.num_of_cols < self.one_way_col):
             self.one_way_col = self.num_of_cols
         
-        #Spliting the roads into direction
         self.col_roads = []
         self.row_roads = []
-
-        #Randomizeing one way road direction then filling the rest of the space with two way roads
         for x in range(0, self.one_way_col):
-            self.col_roads.append(["one way", random.randint(0,1)]) # One way North if 1, South if 0
+            self.col_roads.append(["one way", random.randint(0,1)]) # One way up if 1, down if 0
         while(len(self.col_roads) < self.num_of_cols):
             self.col_roads.append(["two way"])
         
         for x in range(0, self.one_way_row):
-            self.row_roads.append(["one way", random.randint(0,1)]) # One way East if 1, West if 0
+            self.row_roads.append(["one way", random.randint(0,1)])
         while(len(self.row_roads) < self.num_of_rows):
             self.row_roads.append(["two way"])
         
-        # Randomize the roads and put them in a grid
-        random.shuffle(self.col_roads) 
+        random.shuffle(self.col_roads)
         random.shuffle(self.row_roads)
         self.roads = [self.col_roads, self.row_roads]
-
-        #Sorting through the roads and making the intersections
+        print(self.roads)
         for y in range(self.num_of_rows):
             for x in range(self.num_of_cols):
                 no_north = False
@@ -131,7 +115,6 @@ class Map:
                 no_east = False
                 no_west = False
 
-                # Applies conditions to the one way roads
                 if self.roads[0][x][0] == "one way":
                     if self.roads[0][x][1] == 1:
                         no_south = True
@@ -144,7 +127,6 @@ class Map:
                     else:
                         no_east = True
 
-                # Checks if they are at the border
                 if x == 0:
                     no_west = True
                 if y == 0:
@@ -153,8 +135,7 @@ class Map:
                     no_east = True
                 if y == self.num_of_rows-1:
                     no_north = True
-                
-                # Adds it into the map
+                        
                 self.map[x][y] = Intersection(random.randint(0,1),no_west,no_north,no_east,no_south)
                 print_statement = "X:" + str(x) + " Y:" + str(y)
 
@@ -188,9 +169,9 @@ def createProps(grid):
 
 createProps(grid)
 
-print(gridProps)
+# print(gridProps)
 
-target = [1, 1]
+target = [-2, 0]
 start = [0, 0]
 startDir = "N"
 # make this a 2d array and add a new element for each new route which is created and use this as the previous locations of all the routes
@@ -199,40 +180,53 @@ prevLocations = [[]]
 # TODO - update the following 3 functions when we include the rest of the factors for whether a move is valid
 def turnLeft(intersection, direction):
     # converting old direction to direction after turn
-    direction = approachDirections[(approachDirections.index(direction)+1)%4]
+    direction = approachDirections[(approachDirections.index(direction)-1)%4]
     if direction == "N":
+        print("No N:", intersection.no_north)
         return not intersection.no_north
     elif direction == "E":
+        print("No E:", intersection.no_east)
         return not intersection.no_east
     elif direction == "S":
+        print("No S:", intersection.no_south)
         return not intersection.no_south
     elif direction == "W":
+        print("No W:", intersection.no_west)
         return not intersection.no_west
 
 
 def turnRight(intersection, direction):
     # converting old direction to direction after turn
-    direction = approachDirections[(approachDirections.index(direction)-1)%4]
+    direction = approachDirections[(approachDirections.index(direction)+1)%4]
     if direction == "N":
+        print("No N:", intersection.no_north)
         return not intersection.no_north
     elif direction == "E":
+        print("No E:", intersection.no_east)
         return not intersection.no_east
     elif direction == "S":
+        print("No S:", intersection.no_south)
         return not intersection.no_south
     elif direction == "W":
+        print("No W:", intersection.no_west)
         return not intersection.no_west
 
 def goStraight(intersection, direction):
     if direction == "N":
+        print("No N:", intersection.no_north)
         return not intersection.no_north
     elif direction == "E":
+        print("No E:", intersection.no_east)
         return not intersection.no_east
     elif direction == "S":
+        print("No S:", intersection.no_south)
         return not intersection.no_south
     elif direction == "W":
+        print("No W:", intersection.no_west)
         return not intersection.no_west
     
 def findNewLocation(location, turnDir, direction):
+    print(direction)
     direction = findNewDirection(turnDir, direction)
     if direction == "N":
         return [location[0], location[1]+1]
@@ -245,9 +239,9 @@ def findNewLocation(location, turnDir, direction):
 
 def findNewDirection(turnDir, direction):
     if turnDir == "L":
-        return approachDirections[(approachDirections.index(direction)+1)%4]
-    if turnDir == "R":
         return approachDirections[(approachDirections.index(direction)-1)%4]
+    if turnDir == "R":
+        return approachDirections[(approachDirections.index(direction)+1)%4]
     if turnDir == "S":
         return direction
 
@@ -261,8 +255,9 @@ class Route:
         straight = IntersectionPropositions("straight")
 
         # if the game is over
-        if location in prevLocations or location == target:
+        if location in prevLocations or location == target: # TODO - add loss condition for if it has no available moves
             # if the game ended in a win
+            print(previousLocations)
             if location == target:
                 print("location:",location)
                 print("target:",target)
@@ -272,23 +267,24 @@ class Route:
                 print("target:",target)
                 self.constraint = false # THIS SHOULD BE FINE?
         else:
+            print("location:",location)
             if turnLeft(grid.map[location[0]][location[1]], direction):
                 previousLocations.append(findNewLocation(location, "L", direction))
-                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), previousLocations, left_count + 1, right_count, straight_count)
+                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), target, previousLocations, left_count + 1, right_count, straight_count)
                 left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
             else:
                 left_c = false
 
             if turnRight(grid.map[location[0]][location[1]], direction):
                 previousLocations.append(findNewLocation(location, "L", direction))
-                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), previousLocations, left_count, right_count + 1, straight_count)
+                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), target, previousLocations, left_count, right_count + 1, straight_count)
                 right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
             else:
                 right_c = false
 
             if goStraight(grid.map[location[0]][location[1]], direction):
                 previousLocations.append(findNewLocation(location, "L", direction))
-                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), previousLocations, left_count, right_count, straight_count + 1)
+                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), target, previousLocations, left_count, right_count, straight_count + 1)
                 straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
             else:
                 straight_c = false
