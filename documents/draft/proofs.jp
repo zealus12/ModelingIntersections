@@ -1,0 +1,7 @@
+CONJECTUREPANEL Proofs
+    THEOREM IS ¬S, T, Q, R, T→(A∨(¬B∧G)), G→S,(A∧B)→¬R ⊢ A∧¬B 
+    THEOREM IS S, R, ¬T ,¬D , ¬P, R→¬H, (R∧¬D)→(E∧¬P), (E∧¬P∧¬T)→(C∨F∨H)  ⊢ (C∧E)∨(F∧E)
+    THEOREM IS R, S, D, ¬T, (R∧G)→¬P, (¬T∧G)→(P∨B), (S∧D)→G ⊢ B∧¬P
+
+
+END
