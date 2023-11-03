@@ -159,9 +159,9 @@ def createProps(grid):
     for i in range(len(grid.map)):
         for j in range(len(grid.map[0])):
             for direction in approachDirections:
-                left = IntersectionPropositions("left"+direction+str(i)+str(j))
-                right = IntersectionPropositions("right"+direction+str(i)+str(j))
-                straight = IntersectionPropositions("straight"+direction+str(i)+str(j))
+                left = IntersectionPropositions("L"+direction+str(i)+str(j))
+                right = IntersectionPropositions("R"+direction+str(i)+str(j))
+                straight = IntersectionPropositions("S"+direction+str(i)+str(j))
                 gridProps.append(left)
                 gridProps.append(right)
                 gridProps.append(straight)
@@ -230,10 +230,16 @@ def findNewDirection(turnDir, direction):
         return approachDirections[(approachDirections.index(direction)+1)%4]
     if turnDir == "S":
         return direction
+    
+def moveToProp(turnDir, direction, location):
+    return IntersectionPropositions(turnDir+direction+str(location[0])+str(location[1]))
+
+correctPaths = []
+correctProps = []
 
 # if this doesnt work, remove the recursion and use loops
 class Route:
-    def __init__(self, location, direction, target, previousLocations, left_count, right_count, straight_count, test):
+    def __init__(self, location, direction, target, previousLocations, previousProps, left_count, right_count, straight_count, test):
         left = IntersectionPropositions("left")
         right = IntersectionPropositions("right")
         straight = IntersectionPropositions("straight")
@@ -244,50 +250,57 @@ class Route:
         if previousLocations.count(location) >= 2 or location == target: # TODO - add loss condition for if it has no available moves
             # if the game ended in a win
             print(previousLocations)
+            print(previousProps)
+            correctPaths.append(previousLocations)
+            correctProps.append(previousProps)
             if location == target:
                 print("location:",location)
                 print("target:",target)
+                print("Good:",previousLocations)
                 self.constraint = true # HERE I NEED TO FIGURE OUT HOW TO USE ALL THE PROPS WHICH WERENT USED IN THIS ROUTE 
             else: 
                 print("location:",location)
                 print("target:",target)
+                print("Bad:",previousLocations)
                 self.constraint = false # THIS SHOULD BE FINE?
         else:
-            # print("location:",location)
             if turnLeft(grid.map[location[0]][location[1]], direction):
                 test1 = test + "1"
                 previousLocations1 = list(previousLocations)
-                print(test1)
                 previousLocations1.append(findNewLocation(location, "L", direction))
-                print(previousLocations1)
-                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), target, list(previousLocations1), left_count + 1, right_count, straight_count, test1)
-                left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
+                previousProps1 = list(previousProps)
+                previousProps1.append(moveToProp("L", direction, location))#CHANGE ALL THESE TO BE THE MOVETOPROP
+                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), target, list(previousLocations1), list(previousProps1), left_count + 1, right_count, straight_count, test1)
+                # left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
             else:
-                left_c = false
+                # left_c = false
+                pass
 
             if turnRight(grid.map[location[0]][location[1]], direction):
                 test2 = test + "2"
-                print(test2)
                 previousLocations2 = list(previousLocations)
                 previousLocations2.append(findNewLocation(location, "R", direction))
-                print(previousLocations2)
-                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), target, list(previousLocations2), left_count, right_count + 1, straight_count, test2)
-                right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
+                previousProps2 = list(previousProps)
+                previousProps2.append(moveToProp("R", direction, location))
+                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), target, list(previousLocations2), list(previousProps2), left_count, right_count + 1, straight_count, test2)
+                # right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
             else:
-                right_c = false
+                # right_c = false
+                pass
 
             if goStraight(grid.map[location[0]][location[1]], direction):
                 test3 = test + "3"
-                print(test3)
                 previousLocations3 = list(previousLocations)
                 previousLocations3.append(findNewLocation(location, "S", direction))
-                print(previousLocations3)
-                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), target, list(previousLocations3), left_count, right_count, straight_count + 1, test3)
-                straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
+                previousProps3 = list(previousProps)
+                previousProps3.append(moveToProp("S", direction, location))
+                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), target, list(previousLocations3), list(previousProps3), left_count, right_count, straight_count + 1, test3)
+                # straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
             else:
-                straight_c = false
+                # straight_c = false
+                pass
 
-            self.constraint = left_c | right_c | straight_c
+            self.constraint = None#left_c | right_c | straight_c
 
 
         
@@ -306,11 +319,37 @@ class Route:
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
 def example_theory():
-    test = Route(start, startDir, target, [[0, 0]], 0, 0, 0, "")
+    test = Route(start, startDir, target, [[0, 0]], [], 0, 0, 0, "")
     # E.add_constraint(test.get_constraint())
-    E.add_constraint(test.get_constraint())
+    # E.add_constraint(test.get_constraint())
 
+    print("NUM PATHS:", len(correctProps))
+
+    print("PATHS:",correctPaths)
+    print("PROPS:",correctProps)
+
+    constraint = false
+    string = "F"
+
+    for path in correctProps:
+        constraint = constraint | true
+        string += str(" | T")
+        for prop in path:
+            constraint = constraint & prop
+            string += str(" && " + str(prop))
+        for allProp in gridProps:
+            if allProp not in path:
+                constraint = constraint & ~allProp
+                string += str(" && ~" + str(allProp))
+    
+    print("ALL PROPS")
+    print(gridProps)
+    # E.add_constraint(constraint)
+    print("TOP OF STRING")
+    print(string)
+    print("HEREHERERHERHEHRHERHE")
     print(E.constraints)
+    E.add_constraint(constraint)
     # test2 = Route(True)
     # e = test.get_encoding()
     # e2 = test2.get_encoding()
@@ -371,3 +410,7 @@ a path is unsuccessful if it has no directions it can legally move or it has hit
 # docker run -it -v "D:/School/Second Year/CISC 204/Final Project/ModelingIntersections":/PROJECT cisc204 /bin/bash
 # docker run -it -v "C:\Users\Kieran\Documents\GitHub\ModelingIntersections":/PROJECT cisc204 /bin/bash
 # Write the logic rn it check previous lovation chc
+
+
+
+# {A.LN10: False, A.LE00: False, A.LW11: False, A.RN10: False, A.RE00: False, A.RW11: False, A.SN10: False, A.SE00: False, A.SW11: False, A.LE10: False, A.LS00: False, A.RE10: False, A.RS00: False, A.SE10: False, A.RN00: True, A.SS00: False, A.LS10: False, A.LW00: False, A.RS10: False, A.RW00: False, A.SS10: False, A.SW00: False, A.LW10: False, A.LN01: False, A.RW10: False, A.LE10: True, A.RN01: False, A.SW10: False, A.SN01: False, A.LN11: False, A.LE01: False, A.RN11: False, A.RE01: False, A.SN11: False, A.SE01: False, A.SN00: False, A.LE11: False, A.LS01: False, A.SN00: True, A.RE11: False, A.RS01: False, A.SE11: False, A.SS01: False, A.LS11: False, A.LW01: False, A.LN00: False, A.RS11: False, A.RN00: False, A.RW01: False, A.RN01: True, A.SS11: False, A.SW01: False, A.false: False}
