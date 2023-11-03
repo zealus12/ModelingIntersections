@@ -85,7 +85,7 @@ class Map:
         self.num_of_cols = num_of_cols
         self.one_way_row = one_way_row
         self.one_way_col = one_way_col
-        self.map = [[0]*self.num_of_cols]*num_of_rows
+        self.map = [[0]*self.num_of_cols for i in range(self.num_of_rows)]
 
         if(self.num_of_rows < self.one_way_row):
             self.one_way_row = self.num_of_rows
@@ -107,7 +107,6 @@ class Map:
         random.shuffle(self.col_roads)
         random.shuffle(self.row_roads)
         self.roads = [self.col_roads, self.row_roads]
-        print(self.roads)
         for y in range(self.num_of_rows):
             for x in range(self.num_of_cols):
                 no_north = False
@@ -150,7 +149,7 @@ class IntersectionPropositions:
     def __repr__(self):
         return f"A.{self.data}"
     
-grid = Map(2, 2, 0, 0)
+grid = Map(3, 3, 0, 0)
 
 approachDirections = ["N", "E", "S", "W"]
 
@@ -171,7 +170,7 @@ createProps(grid)
 
 # print(gridProps)
 
-target = [-2, 0]
+target = [1, 1]
 start = [0, 0]
 startDir = "N"
 # make this a 2d array and add a new element for each new route which is created and use this as the previous locations of all the routes
@@ -182,16 +181,12 @@ def turnLeft(intersection, direction):
     # converting old direction to direction after turn
     direction = approachDirections[(approachDirections.index(direction)-1)%4]
     if direction == "N":
-        print("No N:", intersection.no_north)
         return not intersection.no_north
     elif direction == "E":
-        print("No E:", intersection.no_east)
         return not intersection.no_east
     elif direction == "S":
-        print("No S:", intersection.no_south)
         return not intersection.no_south
     elif direction == "W":
-        print("No W:", intersection.no_west)
         return not intersection.no_west
 
 
@@ -199,34 +194,25 @@ def turnRight(intersection, direction):
     # converting old direction to direction after turn
     direction = approachDirections[(approachDirections.index(direction)+1)%4]
     if direction == "N":
-        print("No N:", intersection.no_north)
         return not intersection.no_north
     elif direction == "E":
-        print("No E:", intersection.no_east)
         return not intersection.no_east
     elif direction == "S":
-        print("No S:", intersection.no_south)
         return not intersection.no_south
     elif direction == "W":
-        print("No W:", intersection.no_west)
         return not intersection.no_west
 
 def goStraight(intersection, direction):
     if direction == "N":
-        print("No N:", intersection.no_north)
         return not intersection.no_north
     elif direction == "E":
-        print("No E:", intersection.no_east)
         return not intersection.no_east
     elif direction == "S":
-        print("No S:", intersection.no_south)
         return not intersection.no_south
     elif direction == "W":
-        print("No W:", intersection.no_west)
         return not intersection.no_west
     
 def findNewLocation(location, turnDir, direction):
-    print(direction)
     direction = findNewDirection(turnDir, direction)
     if direction == "N":
         return [location[0], location[1]+1]
@@ -245,16 +231,16 @@ def findNewDirection(turnDir, direction):
     if turnDir == "S":
         return direction
 
-
-
 # if this doesnt work, remove the recursion and use loops
 class Route:
-    def __init__(self, location, direction, target, previousLocations, left_count, right_count, straight_count):
+    def __init__(self, location, direction, target, previousLocations, left_count, right_count, straight_count, test):
         left = IntersectionPropositions("left")
         right = IntersectionPropositions("right")
         straight = IntersectionPropositions("straight")
 
+        
         # if the game is over
+        print("dir:",direction)
         if location in prevLocations or location == target: # TODO - add loss condition for if it has no available moves
             # if the game ended in a win
             print(previousLocations)
@@ -267,24 +253,36 @@ class Route:
                 print("target:",target)
                 self.constraint = false # THIS SHOULD BE FINE?
         else:
-            print("location:",location)
+            # print("location:",location)
             if turnLeft(grid.map[location[0]][location[1]], direction):
-                previousLocations.append(findNewLocation(location, "L", direction))
-                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), target, previousLocations, left_count + 1, right_count, straight_count)
+                test1 = test + "1"
+                previousLocations1 = list(previousLocations)
+                print(test1)
+                previousLocations1.append(findNewLocation(location, "L", direction))
+                print(previousLocations1)
+                left_r = Route(findNewLocation(location, "L", direction), findNewDirection("L", direction), target, list(previousLocations1), left_count + 1, right_count, straight_count, test1)
                 left_c = ((left & ~straight & ~right) & left_r.get_constraint()) if left_r.get_constraint() != false else false
             else:
                 left_c = false
 
             if turnRight(grid.map[location[0]][location[1]], direction):
-                previousLocations.append(findNewLocation(location, "L", direction))
-                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), target, previousLocations, left_count, right_count + 1, straight_count)
+                test2 = test + "2"
+                print(test2)
+                previousLocations2 = list(previousLocations)
+                previousLocations2.append(findNewLocation(location, "R", direction))
+                print(previousLocations2)
+                right_r = Route(findNewLocation(location, "R", direction), findNewDirection("R", direction), target, list(previousLocations2), left_count, right_count + 1, straight_count, test2)
                 right_c = ((~left & ~straight & right) & right_r.get_constraint()) if right_r.get_constraint() != false else false
             else:
                 right_c = false
 
             if goStraight(grid.map[location[0]][location[1]], direction):
-                previousLocations.append(findNewLocation(location, "L", direction))
-                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), target, previousLocations, left_count, right_count, straight_count + 1)
+                test3 = test + "3"
+                print(test3)
+                previousLocations3 = list(previousLocations)
+                previousLocations3.append(findNewLocation(location, "S", direction))
+                print(previousLocations3)
+                straight_r = Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), target, list(previousLocations3), left_count, right_count, straight_count + 1, test3)
                 straight_c = ((left & ~straight & ~right) & straight_r.get_constraint()) if straight_r.get_constraint() != false else false
             else:
                 straight_c = false
@@ -308,7 +306,7 @@ class Route:
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
 def example_theory():
-    test = Route(start, startDir, target, [[0, 0]], 0, 0, 0)
+    test = Route(start, startDir, target, [[0, 0]], 0, 0, 0, "")
     # E.add_constraint(test.get_constraint())
     E.add_constraint(test.get_constraint())
 
