@@ -241,7 +241,7 @@ class Route:
         
         # if the game is over
         print("dir:",direction)
-        if location in prevLocations or location == target: # TODO - add loss condition for if it has no available moves
+        if previousLocations.count(location) >= 2 or location == target: # TODO - add loss condition for if it has no available moves
             # if the game ended in a win
             print(previousLocations)
             if location == target:
@@ -369,3 +369,5 @@ a path is unsuccessful if it has no directions it can legally move or it has hit
 """
 
 # docker run -it -v "D:/School/Second Year/CISC 204/Final Project/ModelingIntersections":/PROJECT cisc204 /bin/bash
+# docker run -it -v "C:\Users\Kieran\Documents\GitHub\ModelingIntersections":/PROJECT cisc204 /bin/bash
+# Write the logic rn it check previous lovation chc
