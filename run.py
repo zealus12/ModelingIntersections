@@ -92,6 +92,7 @@ class Map:
                         
                 self.map[x][y] = Intersection(random.randint(0,1),no_west,no_north,no_east,no_south)
                 print_statement = "X:" + str(x) + " Y:" + str(y)
+                print(print_statement)
 
 Route_E = Encoding()
 
@@ -104,11 +105,12 @@ class IntersectionPropositions:
     def __repr__(self):
         return f"A.{self.data}"
     
-grid = Map(3, 3, 0, 0)
+grid = Map(2, 2, 0, 0)
 
 approachDirections = ["N", "E", "S", "W"]
 
 gridProps = []
+propNames = []
 
 def createProps(grid):
     for i in range(len(grid.map)):
@@ -117,11 +119,18 @@ def createProps(grid):
                 left = IntersectionPropositions("L"+direction+str(i)+str(j))
                 right = IntersectionPropositions("R"+direction+str(i)+str(j))
                 straight = IntersectionPropositions("S"+direction+str(i)+str(j))
+                propNames.append("L"+direction+str(i)+str(j))
+                propNames.append("R"+direction+str(i)+str(j))
+                propNames.append("S"+direction+str(i)+str(j))
                 gridProps.append(left)
                 gridProps.append(right)
                 gridProps.append(straight)
+    print(propNames)
+
 
 createProps(grid)
+gridPropNames = [x.data for x in gridProps]
+
 
 target = [1, 1]
 start = [0, 0]
@@ -186,7 +195,9 @@ def findNewDirection(turnDir, direction):
 
 # converts the movement information into the correct proposition
 def moveToProp(turnDir, direction, location):
-    return IntersectionPropositions(turnDir+direction+str(location[0])+str(location[1]))
+
+
+    return gridProps[gridPropNames.index(IntersectionPropositions(turnDir+direction+str(location[0])+str(location[1])).data)]
 
 # list of all correct paths as a list of positions and propositions
 correctPaths = []
@@ -244,45 +255,106 @@ class Route:
 #  There should be at least 10 variables, and a sufficiently large formula to describe it (>50 operators).
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
-def example_theory():
-    # generating routes
-    Route(start, startDir, target, [[0, 0]], [], 0, 0, 0, "")
+# def example_theory():
+print(grid.map)
+# generating routes
+Route(start, startDir, target, [[0, 0]], [], 0, 0, 0, "")
 
-    # printing information about tasks
-    print("NUM PATHS:", len(correctProps))
-    print("PATHS:",correctPaths)
-    print("PROPS:",correctProps)
+# printing information about tasks
+print("NUM PATHS:", len(correctProps))
+print("PATHS:",correctPaths)
+print("PROPS:",correctProps)
 
-    # TODO - find logic error in this part of the code
-    constraint = false
-    string = "F"
-    for path in correctProps:
-        constraint = constraint | true
-        string += str(" | T")
-        for prop in path:
-            constraint = constraint & prop
-            string += str(" && " + str(prop))
-        for allProp in gridProps:
-            if allProp not in path:
-                constraint = constraint & ~allProp
-                string += str(" && ~" + str(allProp))
+# TODO - find logic error in this part of the code
+# constraint = false
+string = ""
+path_constraint = []
+i = 0
+for path in correctProps:
+    # constraint = constraint | true
+    path_constraint.append(true)
+    # path_constraint[i] = true
+    string += str("T")
+    test_str =""
+    for prop in path:
+        path_constraint[i]  = path_constraint[i]  & prop
+        # constraint = constraint & prop
+        string += str(" && " + str(prop))
+        test_str += str(" && " + str(prop))
+    print(test_str)
+    for allProp in gridProps:
+        # if allProp.data not in path:
+        found = False
+        for all in path:
+            if all.data == allProp.data:
+                found = True
+        if not found:
+
+            # print(path[0])
+            path_constraint[i]  = path_constraint[i]  & ~allProp
+            # constraint = constraint & ~allProp
+            string += str(" && ~" + str(allProp))
+    i+=1
+# for path in path_constraint:
+# constraint = false
+constraint_str = "def generate_con():\n\t return "
+for i in range(len(path_constraint)):
+    constraint_str += "path_constraint["+str(i)+"] | "
+# x =0
+# exec("print(x)")
+print(constraint_str[:-2])
+exec(constraint_str[:-2], globals())
+constraint = generate_con()
+print(constraint_str[:-2])
+#     constraint = constraint | path
+# constraint = path_constraint[0] | path_constraint[1] |path_constraint[2] | path_constraint[3]| path_constraint[4] | path_constraint[5] | path_constraint[6] | path_constraint[7] | path_constraint[8] | path_constraint[9]
+print(path_constraint[0])
+test = [IntersectionPropositions("test"),IntersectionPropositions("test2"), IntersectionPropositions("test3"), IntersectionPropositions("test4"), IntersectionPropositions("test5")]
+# ls = (test[0]&~test[1]&~test[2]&~test[3]&~test[4])
+# rs = ~test[0] &test[1]&~test[2]&test[3]&~test[4]
+# constraint = ls|rs
+
+good1 = [IntersectionPropositions("test"), IntersectionPropositions("test2")]
+good2 = [test[1], test[3]]
+constraints = []
+i =0
+goods = [good1,good2]
+for good in goods:
+    constraints.append(~false)
+    for prop in good:
+        constraints[i] = constraints[i] & prop
+    for all in test:
+        found = False
+        for some in good:
+            if some.data == all.data:
+                found = True
+        if not found:
+            constraints[i] = constraints[i] &~all
+    i+=1
+
+
+print("Proposition:",string)
+print(Route_E.constraints)
+Route_E.add_constraint(constraint)
     
-    print("Proposition:",string)
-    print(E.constraints)
-    E.add_constraint(constraint)
-    return E
+    # return Route_E
 
 
 if __name__ == "__main__":
 
-    T = example_theory()
+    T = Route_E#example_theory()
     # Don't compile until you're finished adding all your constraints!
     T = T.compile()
+    E.pprint(T)
     print(len(T.vars()))
     # After compilation (and only after), you can check some of the properties
     # of your model:
     print("\nSatisfiable: %s" % T.satisfiable())
     print("# Solutions: %d" % count_solutions(T))
     print("   Solution: %s" % T.solve())
-
+    print("   Solution: %s" % T.solve())
+    print("   Solution: %s" % T.solve())
     print()
+
+
+    #docker run -it -v "C:\Users\Mike\Documents\uni\CISC 204\ModelingIntersections":/PROJECT cisc204 /bin/bash
