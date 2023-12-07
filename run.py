@@ -94,6 +94,13 @@ class Map:
                 print_statement = "X:" + str(x) + " Y:" + str(y)
                 print(print_statement)
 
+    def print(self,grid):
+        for y in range(self.num_of_rows):
+            for x in range(self.num_of_cols):
+                print(str(self.map[x][y].red_light_col)+" ", end="")
+            print()
+
+
 Route_E = Encoding()
 
 @proposition(Route_E)
@@ -106,8 +113,9 @@ class IntersectionPropositions:
         return f"A.{self.data}"
     
 grid = Map(3, 3, 0, 0)
+grid.print(grid)
 
-approachDirections = ["N", "E", "S", "W"]
+approachDirections = ["N", "W", "S", "E"]
 
 gridProps = []
 propNames = []
@@ -118,24 +126,50 @@ def createProps(grid):
     for i in range(len(grid.map)):
         for j in range(len(grid.map[0])):
             for direction in approachDirections:
+                light = IntersectionPropositions("Light"+direction+str(i)+str(j))
                 left = IntersectionPropositions("L"+direction+str(i)+str(j))
                 right = IntersectionPropositions("R"+direction+str(i)+str(j))
                 straight = IntersectionPropositions("S"+direction+str(i)+str(j))
                 propNames.append("L"+direction+str(i)+str(j))
                 propNames.append("R"+direction+str(i)+str(j))
                 propNames.append("S"+direction+str(i)+str(j))
-                gridProps.append(left)
-                gridProps.append(right)
-                gridProps.append(straight)
+                gridProps.append((left, light))
+                gridProps.append((right,light))
+                gridProps.append((straight,light))
     print(propNames)
+
+
+
 
 
 createProps(grid)
 # list of the names (data field) for all of our grid props
-gridPropNames = [x.data for x in gridProps]
+gridPropNames = [x[0].data for x in gridProps]
 
 
-target = [2, 2]
+def createLights(grid):
+    unpassable = []
+    for y in range(grid.num_of_rows):
+        for x in range(grid.num_of_cols):
+            for direction in approachDirections:
+                if grid.map[x][y].red_light_col:
+                    print(x,y)
+                    if direction == "N" or direction == "S":
+                         #find index and prop obj of light that is impassible
+                         unpassable.append(gridProps[gridPropNames.index("S"+direction+str(x)+str(y))][1])
+                else:
+                    if direction == "E" or direction == "W":
+                         #find index and prop obj of light that is impassible
+                         unpassable.append(gridProps[gridPropNames.index("S"+direction+str(x)+str(y))][1])
+    return unpassable
+
+unpassable = createLights(grid)
+
+for x in unpassable:
+    print(x)
+
+
+target = [1, 1]
 start = [0, 0]
 startDir = "N"
 prevLocations = [[]]
@@ -278,20 +312,35 @@ for path in correctProps:
     test_str =""
     #collect all propositions that must be true to reach our target
     for prop in path:
-        path_constraint[i]  = path_constraint[i]  & prop
+        if prop[0].data[0] == "R":
+            path_constraint[i]  = path_constraint[i]  & prop[0]
+        else: 
+            path_constraint[i]  = path_constraint[i]  & (prop[0] & prop[1])
         string += str(" && " + str(prop))
         test_str += str(" && " + str(prop))
     #collect and negate everything else
     for allProp in gridProps:
         found = False
         for all in path:
-            if all.data == allProp.data:
+            if all[0].data == allProp[0].data:
                 found = True
         if not found:
-            path_constraint[i]  = path_constraint[i]  & ~allProp
+            path_constraint[i]  = path_constraint[i]  & ~allProp[0]
             string += str(" && ~" + str(allProp))
     i+=1
 
+
+lightConstraints = true
+for prop in gridProps:
+    found = False
+    for bad in unpassable:
+        if bad.data == prop[1].data:
+            found = True
+            lightConstraints = lightConstraints & ~prop[1]
+    if not found:
+        lightConstraints = lightConstraints & prop[1]
+    
+print(lightConstraints)
 
 # This section of code generates a function called generate_con()
 # generate_con() will return all of our propositions | together
@@ -308,7 +357,7 @@ exec(constraint_str[:-2], globals())
 constraint = generate_con()
 
 
-Route_E.add_constraint(constraint)
+Route_E.add_constraint(constraint&lightConstraints)
     
  
 
@@ -324,8 +373,6 @@ if __name__ == "__main__":
     # of your model:
     print("\nSatisfiable: %s" % T.satisfiable())
     print("# Solutions: %d" % count_solutions(T))
-    print("   Solution: %s" % T.solve())
-    print("   Solution: %s" % T.solve())
     print("   Solution: %s" % T.solve())
     print()
 
