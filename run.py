@@ -105,13 +105,15 @@ class IntersectionPropositions:
     def __repr__(self):
         return f"A.{self.data}"
     
-grid = Map(2, 2, 0, 0)
+grid = Map(3, 3, 0, 0)
 
 approachDirections = ["N", "E", "S", "W"]
 
 gridProps = []
 propNames = []
 
+
+#generate all propositions that could possibly be used
 def createProps(grid):
     for i in range(len(grid.map)):
         for j in range(len(grid.map[0])):
@@ -129,10 +131,11 @@ def createProps(grid):
 
 
 createProps(grid)
+# list of the names (data field) for all of our grid props
 gridPropNames = [x.data for x in gridProps]
 
 
-target = [1, 1]
+target = [2, 2]
 start = [0, 0]
 startDir = "N"
 prevLocations = [[]]
@@ -195,8 +198,8 @@ def findNewDirection(turnDir, direction):
 
 # converts the movement information into the correct proposition
 def moveToProp(turnDir, direction, location):
-
-
+    #originally this would return a new IntersectionPropositions with the same name as one of the possible ones in the array above. This would compile incorrectly as they were treated as seperate props
+    #now we find the proposition in gridpros by name
     return gridProps[gridPropNames.index(IntersectionPropositions(turnDir+direction+str(location[0])+str(location[1])).data)]
 
 # list of all correct paths as a list of positions and propositions
@@ -250,12 +253,11 @@ class Route:
                 previousProps3.append(moveToProp("S", direction, location))
                 Route(findNewLocation(location, "S", direction), findNewDirection("S", direction), target, list(previousLocations3), list(previousProps3), left_count, right_count, straight_count + 1, test3)
 
-# Build an example full theory for your setting and return it.
+# Build a full theory for your setting and return it.
 #
 #  There should be at least 10 variables, and a sufficiently large formula to describe it (>50 operators).
 #  This restriction is fairly minimal, and if there is any concern, reach out to the teaching staff to clarify
 #  what the expectations are.
-# def example_theory():
 print(grid.map)
 # generating routes
 Route(start, startDir, target, [[0, 0]], [], 0, 0, 0, "")
@@ -265,79 +267,50 @@ print("NUM PATHS:", len(correctProps))
 print("PATHS:",correctPaths)
 print("PROPS:",correctProps)
 
-# TODO - find logic error in this part of the code
-# constraint = false
 string = ""
 path_constraint = []
 i = 0
+#For all valid paths
 for path in correctProps:
-    # constraint = constraint | true
+    #create a new path constraint
     path_constraint.append(true)
-    # path_constraint[i] = true
     string += str("T")
     test_str =""
+    #collect all propositions that must be true to reach our target
     for prop in path:
         path_constraint[i]  = path_constraint[i]  & prop
-        # constraint = constraint & prop
         string += str(" && " + str(prop))
         test_str += str(" && " + str(prop))
-    print(test_str)
+    #collect and negate everything else
     for allProp in gridProps:
-        # if allProp.data not in path:
         found = False
         for all in path:
             if all.data == allProp.data:
                 found = True
         if not found:
-
-            # print(path[0])
             path_constraint[i]  = path_constraint[i]  & ~allProp
-            # constraint = constraint & ~allProp
             string += str(" && ~" + str(allProp))
     i+=1
-# for path in path_constraint:
-# constraint = false
+
+
+# This section of code generates a function called generate_con()
+# generate_con() will return all of our propositions | together
+# this will look like:
+#
+# def generate_con():
+#   return path_constraint[0] | path_constraint[1] | path_constraint[2] | ... path_constraint[x]
+# 
+#  It will then set the constrain function to the return value of generate_con()
 constraint_str = "def generate_con():\n\t return "
 for i in range(len(path_constraint)):
     constraint_str += "path_constraint["+str(i)+"] | "
-# x =0
-# exec("print(x)")
-print(constraint_str[:-2])
 exec(constraint_str[:-2], globals())
 constraint = generate_con()
-print(constraint_str[:-2])
-#     constraint = constraint | path
-# constraint = path_constraint[0] | path_constraint[1] |path_constraint[2] | path_constraint[3]| path_constraint[4] | path_constraint[5] | path_constraint[6] | path_constraint[7] | path_constraint[8] | path_constraint[9]
-print(path_constraint[0])
-test = [IntersectionPropositions("test"),IntersectionPropositions("test2"), IntersectionPropositions("test3"), IntersectionPropositions("test4"), IntersectionPropositions("test5")]
-# ls = (test[0]&~test[1]&~test[2]&~test[3]&~test[4])
-# rs = ~test[0] &test[1]&~test[2]&test[3]&~test[4]
-# constraint = ls|rs
-
-good1 = [IntersectionPropositions("test"), IntersectionPropositions("test2")]
-good2 = [test[1], test[3]]
-constraints = []
-i =0
-goods = [good1,good2]
-for good in goods:
-    constraints.append(~false)
-    for prop in good:
-        constraints[i] = constraints[i] & prop
-    for all in test:
-        found = False
-        for some in good:
-            if some.data == all.data:
-                found = True
-        if not found:
-            constraints[i] = constraints[i] &~all
-    i+=1
 
 
-print("Proposition:",string)
-print(Route_E.constraints)
 Route_E.add_constraint(constraint)
     
-    # return Route_E
+ 
 
 
 if __name__ == "__main__":
