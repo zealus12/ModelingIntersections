@@ -170,7 +170,7 @@ for x in unpassable:
 
 
 target = [1, 1]
-start = [0, 0]
+start = [1, 0]
 startDir = "N"
 prevLocations = [[]]
 
@@ -359,14 +359,16 @@ constraint = generate_con()
 
 Route_E.add_constraint(constraint&lightConstraints)
     
+def example_theory():
+    return Route_E.compile()
  
 
 
 if __name__ == "__main__":
 
-    T = Route_E#example_theory()
+    T = example_theory()#example_theory()
     # Don't compile until you're finished adding all your constraints!
-    T = T.compile()
+    # T = T.compile()
     E.pprint(T)
     print(len(T.vars()))
     # After compilation (and only after), you can check some of the properties
