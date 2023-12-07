@@ -94,11 +94,19 @@ class Map:
                 print_statement = "X:" + str(x) + " Y:" + str(y)
                 print(print_statement)
 
-    def print(self,grid):
+    def print(self):
+        print("*" * ((self.num_of_cols * 8) + 1))
         for y in range(self.num_of_rows):
-            for x in range(self.num_of_cols):
-                print(str(self.map[x][y].red_light_col)+" ", end="")
-            print()
+            for i in range(3):
+                    for x in range(self.num_of_cols):
+                        print("*", end="")
+                        if i == 1:
+                            print(" ----- " if self.map[x][y].red_light_col == 0 else "   |   ", end = "")
+                        else:
+                            print("   |   " if self.map[x][y].red_light_col == 1 else "       ", end="")
+
+                    print("*")
+            print("*" * ((self.num_of_cols * 8) + 1))
 
 
 Route_E = Encoding()
